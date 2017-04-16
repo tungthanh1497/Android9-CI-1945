@@ -1,42 +1,44 @@
-import javax.imageio.ImageIO;
+import models.GameRect;
+import utils.Utils;
+import views.ImageRenderer;
+
 import java.awt.*;
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
 /**
  * Created by zTitiK on 12-Apr-17.
  */
-public class Player {
-    private int x;
-    private int y;
-    private Image img;
-
+public class PlayerController {
+    private GameRect gameRect;
     private int dx;
     private int dy;
+    private ImageRenderer imageRenderer;
+
 
     private ArrayList<Bullet> bullets;
     private boolean shootEnabled;
     private int countDown;
 
-    public int getX() {
-        return x;
+    public GameRect getGameRect() {
+        return gameRect;
     }
 
-    public int getY() {
-        return y;
+    public ImageRenderer getImageRenderer() {
+        return imageRenderer;
     }
 
-    public Image getImg() {
-        return img;
+    public ArrayList<Bullet> getBullets() {
+        return bullets;
     }
 
-    public Player(int x, int y, Image img) {
-        this.img = img;
-        this.x = x - img.getWidth(null) / 2;
-        this.y = y - img.getHeight(null);
+    public PlayerController(int x, int y, Image img) {
+//        this.x = x - img.getWidth(null) / 2;
+//        this.y = y - img.getHeight(null);
         dx = 0;
         dy = 0;
+        gameRect = new GameRect(x - img.getWidth(null) / 2, y - img.getHeight(null), 70, 50);
+        imageRenderer = new ImageRenderer(img);
         bullets = new ArrayList<>();
         shootEnabled = true;
     }
@@ -45,22 +47,22 @@ public class Player {
         dx = 0;
         dy = 0;
         if (inputManager.isRightPressed()) {
-            if ((x + 10) <= (600 - 70)) {
+            if ((gameRect.getX() + 10) <= (600 - 70)) {
                 dx += 10;
             }
         }
         if (inputManager.isLeftPressed()) {
-            if ((x - 10) >= 0) {
+            if ((gameRect.getX() - 10) >= 0) {
                 dx -= 10;
             }
         }
         if (inputManager.isUpPressed()) {
-            if ((y - 40) >= 0) {
+            if ((gameRect.getY() - 40) >= 0) {
                 dy -= 10;
             }
         }
         if (inputManager.isDownPressed()) {
-            if ((y + 10) <= 700 - 50) {
+            if ((gameRect.getY() + 10) <= 700 - 50) {
                 dy += 10;
             }
         }
@@ -68,7 +70,7 @@ public class Player {
             if (shootEnabled) {
                 Bullet bullet = null;
                 try {
-                    bullet = new Bullet(x + img.getWidth(null) / 2, y, Utils.loadImage("res/bullet.png"));
+                    bullet = new Bullet(gameRect.getX() + imageRenderer.getImage().getWidth(null) / 2, gameRect.getY(), Utils.loadImage("res/bullet.png"));
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -81,18 +83,17 @@ public class Player {
 
 
     public void draw(Graphics g) {
-        g.drawImage(img, x, y, 70, 50, null);
+        imageRenderer.render(g, gameRect);
         for (Bullet b : bullets) {
             b.draw(g);
         }
     }
 
     public void update() {
-        this.x += dx;
-        this.y += dy;
+        gameRect.move(dx, dy);
 
         for (int i = 0; i < bullets.size(); i++) {
-            if (bullets.get(i).getBulletY() < 0) {
+            if (bullets.get(i).getGameRect().getY() < 0) {
                 bullets.remove(bullets.get(i));
                 i--;
             } else

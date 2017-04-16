@@ -1,11 +1,13 @@
-import javax.imageio.ImageIO;
+import enemies.Behaviors;
+import enemies.DiagBehaviors;
+import enemies.EnemyController;
+import utils.Utils;
+
 import java.awt.*;
 import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -15,18 +17,17 @@ import java.util.Random;
 public class GameWindow extends Frame {
     Random rand = new Random();
     Image bgImage;
-    Player player;
+    PlayerController player;
 
     BufferedImage backBufferImage;
     Graphics backBufferGraphics;
 
 
-    ArrayList<Enemy> enemies = new ArrayList<>();
+    ArrayList<EnemyController> enemies = new ArrayList<>();
 
     boolean creatNewEnemyEnable = true;
     int countDown;
     InputManager inputManager = new InputManager();
-
 
     public GameWindow() {
         this.setVisible(true);
@@ -146,7 +147,7 @@ public class GameWindow extends Frame {
 
 
         //1 Load image
-        player = new Player(this.getWidth() / 2, this.getHeight(), Utils.loadImage("res/plane3.png"));
+        player = new PlayerController(this.getWidth() / 2, this.getHeight(), Utils.loadImage("res/plane3.png"));
         bgImage = Utils.loadImage("res/background.png");
         // 2 Draw
 
@@ -160,7 +161,15 @@ public class GameWindow extends Frame {
                         e.printStackTrace();
                     }
                     if (creatNewEnemyEnable) {
-                        Enemy enemy = new Enemy(getRandomX(), 0, Utils.loadImage("res/enemy-green-3.png"));
+                        EnemyController enemy;
+                        System.out.println(enemies.size());
+                        if (enemies.size() > 3) {
+                            enemy = new EnemyController(getRandomX(), 0, Utils.loadImage("res/enemy-green-1.png"));
+                            enemy.setBehaviors(new DiagBehaviors());
+                        } else {
+                            enemy = new EnemyController(getRandomX(), 0, Utils.loadImage("res/enemy-green-3.png"));
+                            enemy.setBehaviors(new Behaviors());
+                        }
                         enemies.add(enemy);
                         creatNewEnemyEnable = false;
                         countDown = 50;
@@ -172,11 +181,23 @@ public class GameWindow extends Frame {
                     }
 
                     for (int i = 0; i < enemies.size(); i++) {
-                        if (enemies.get(i).getY() > 700 || enemies.get(i).getX() < 0 || enemies.get(i).getX() > 600) {
+                        if (enemies.get(i).getGameRect().getY() > 700 || enemies.get(i).getGameRect().getX() < 0 || enemies.get(i).getGameRect().getX() > 600) {
                             enemies.remove(enemies.get(i));
                             i--;
                         } else
                             enemies.get(i).update();
+                    }
+
+                    for (int j = 0; j < player.getBullets().size(); j++) {
+                        for (int i = 0; i < enemies.size(); i++) {
+                            if (enemies.get(i).getGameRect().isMatch(player.getBullets().get(j).getGameRect())) {
+                                System.out.println("Boom");
+                                enemies.remove(enemies.get(i));
+                                player.getBullets().remove(player.getBullets().get(j));
+                                j--;
+                                break;
+                            }
+                        }
                     }
 
                     // Logic
@@ -193,7 +214,6 @@ public class GameWindow extends Frame {
     }
 
 
-
     private int getRandomX() {
         return (rand.nextInt(this.getWidth()) + 1);
     }
@@ -203,7 +223,7 @@ public class GameWindow extends Frame {
     public void update(Graphics g) {
         backBufferGraphics.drawImage(bgImage, 0, 0, 600, 700, null);
         player.draw(backBufferGraphics);
-        for (Enemy e : enemies) {
+        for (EnemyController e : enemies) {
             e.draw(backBufferGraphics);
         }
 
